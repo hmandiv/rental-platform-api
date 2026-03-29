@@ -7,7 +7,27 @@ import { errorHandler } from "./middlewares/errorHandler";
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://simple-lease.vercel.app",
+  "https://www.directrent.ca",
+];
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow non-browser tools like curl/Postman with no origin
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(requestLogger);
 
