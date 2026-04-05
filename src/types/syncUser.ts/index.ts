@@ -4,24 +4,9 @@ type SyncUserInput = {
   email: string;
 };
 
-type SyncUserResult =
-  | {
-      type: "validation_error";
-      message: string;
-    }
-  | {
-      type: "already_synced";
-      data: {
-        id: string;
-        alreadySynced: true;
-      };
-    }
-  | {
-      type: "created";
-      data: {
-        id: string;
-        alreadySynced: false;
-      };
-    };
+type SyncUserServiceResult = {
+  id: string;
+  alreadySynced: boolean;
+};
 
-export { SyncUserInput, SyncUserResult };
+export { SyncUserInput, SyncUserServiceResult };

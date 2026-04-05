@@ -1,16 +1,14 @@
 import { admin, db } from "../config/firebaseAdmin";
-import { SyncUserInput, SyncUserResult } from "../types/syncUser.ts";
+import { SyncUserInput, SyncUserServiceResult } from "../types/syncUser.ts";
+import { AppError } from "../utils/appError";
 
 export const syncUserService = async ({
   id,
   name,
   email,
-}: SyncUserInput): Promise<SyncUserResult> => {
+}: SyncUserInput): Promise<SyncUserServiceResult> => {
   if (!id || !name || !email) {
-    return {
-      type: "validation_error",
-      message: "id, name, and email are required",
-    };
+    throw new AppError("id, name, and email are required", 400);
   }
 
   const userRef = db.collection("users").doc(id);
@@ -18,11 +16,8 @@ export const syncUserService = async ({
 
   if (existingUserSnap.exists) {
     return {
-      type: "already_synced",
-      data: {
-        id,
-        alreadySynced: true,
-      },
+      id,
+      alreadySynced: true,
     };
   }
 
@@ -36,10 +31,7 @@ export const syncUserService = async ({
   });
 
   return {
-    type: "created",
-    data: {
-      id,
-      alreadySynced: false,
-    },
+    id,
+    alreadySynced: false,
   };
 };
