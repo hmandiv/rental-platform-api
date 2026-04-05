@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
-import healthRoutes from "./routes/health.routes";
+
 import { requestLogger } from "./middlewares/requestLogger";
 import { notFound } from "./middlewares/notFound";
 import { errorHandler } from "./middlewares/errorHandler";
+
+import healthRoutes from "./routes/health.routes";
+import authRoutes from "./routes/auth.routes";
 
 const app = express();
 
@@ -39,6 +42,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/health", healthRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
