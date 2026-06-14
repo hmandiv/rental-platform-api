@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 export const getUploadSignature = asyncHandler(
   async (req: Request, res: Response) => {
-    const result = await generateUploadSignature(req.body);
+    const result = await generateUploadSignature({ uid: req.user!.uid });
 
     return res.status(200).json({
       success: true,
