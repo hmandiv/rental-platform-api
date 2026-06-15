@@ -8,7 +8,13 @@ export const requireAuth = async (
   next: NextFunction,
 ) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return next(new AppError("Unauthorized - invalid auth header", 401));
+    }
+
+    const token = authHeader.split("Bearer ")[1];
 
     if (!token) {
       return next(new AppError("Unauthorized — no token provided", 401));
@@ -16,18 +22,25 @@ export const requireAuth = async (
 
     const decoded = await admin.auth().verifyIdToken(token);
 
+    // NOTE: This performs a Firestore read on every authenticated request.
+    // This is acceptable for the current app scale and keeps role/account data centralized.
+    // If traffic grows, consider moving stable auth data like role/isApproved to
+    // Firebase custom claims, adding a cache, or only loading the user document
+    // on routes that need full profile data.
     const userDoc = await db.collection("users").doc(decoded.uid).get();
 
     if (!userDoc.exists) {
       return next(new AppError("Unauthorized — user not found", 401));
     }
 
+    const userData = userDoc.data();
+
     req.user = {
       uid: decoded.uid,
-      role: userDoc.data()!.role,
-      isApproved: userDoc.data()!.isApproved,
-      name: userDoc.data()!.name,
-      email: userDoc.data()!.email,
+      role: userData?.role,
+      isApproved: userData?.isApproved,
+      name: userData?.name,
+      email: userData?.email,
     };
 
     next();
@@ -39,13 +52,25 @@ export const requireAuth = async (
 export const requireRole = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      throw new AppError("Unauthorized — no user on request", 401);
+      return next(new AppError("Unauthorized — no user on request", 401));
     }
 
     if (!roles.includes(req.user.role)) {
-      throw new AppError("Forbidden — insufficient role", 403);
+      return next(new AppError("Forbidden — insufficient role", 403));
     }
 
     next();
   };
+};
+
+export const requireApproved = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user?.isApproved) {
+    return next(new AppError("Account pending approval", 403));
+  }
+
+  next();
 };
