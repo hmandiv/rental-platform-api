@@ -1,19 +1,19 @@
 import { Router } from "express";
-import { getUploadSignature } from "../controllers/upload.controller";
+import { createProperty } from "../controllers/property.controller";
 import {
-  requireApproved,
   requireAuth,
+  requireApproved,
   requireRole,
 } from "../middlewares/requireAuth";
 
 const router = Router();
 
 router.post(
-  "/sign",
+  "/",
   requireAuth,
   requireRole("owner", "admin"),
   requireApproved,
-  getUploadSignature,
+  createProperty,
 );
 
 export default router;
