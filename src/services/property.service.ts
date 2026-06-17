@@ -9,7 +9,14 @@ export const createPropertyService = async (
 ): Promise<Property> => {
   const { title, description, price, location } = input;
 
-  if (!title || !description || !price || !location) {
+  if (
+    !title?.trim() ||
+    !description?.trim() ||
+    typeof price !== "number" ||
+    !Number.isFinite(price) ||
+    price <= 0 ||
+    !location?.trim()
+  ) {
     throw new AppError(
       "Title, description, price, and location are required",
       400,
