@@ -5,7 +5,7 @@ export interface UploadSignInput {
 export interface UploadSignResult {
   signature: string;
   timestamp: number;
-  apiKey: string | undefined;
-  cloudName: string | undefined;
+  apiKey: string;
+  cloudName: string;
   folder: string;
 }
