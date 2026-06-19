@@ -1,28 +1,10 @@
 import { CreatePropertyInput, Property } from "../types/property";
 import crypto from "node:crypto";
-import { AppError } from "../utils/appError";
-
 import { admin, db } from "../config/firebaseAdmin";
 
 export const createPropertyService = async (
   input: CreatePropertyInput,
 ): Promise<Property> => {
-  const { title, description, price, location } = input;
-
-  if (
-    !title?.trim() ||
-    !description?.trim() ||
-    typeof price !== "number" ||
-    !Number.isFinite(price) ||
-    price <= 0 ||
-    !location?.trim()
-  ) {
-    throw new AppError(
-      "Title, description, price, and location are required",
-      400,
-    );
-  }
-
   const property = {
     id: crypto.randomUUID(),
     ...input,
@@ -30,6 +12,7 @@ export const createPropertyService = async (
     isFeatured: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
+
   const propertyRef = db.collection("properties").doc(property.id);
   await propertyRef.set(property);
 
