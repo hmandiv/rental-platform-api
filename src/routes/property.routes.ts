@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { createProperty } from "../controllers/property.controller";
+import {
+  createProperty,
+  getProperties,
+} from "../controllers/property.controller";
 import {
   requireApproved,
   requireAuth,
@@ -9,6 +12,8 @@ import { validate } from "../middlewares/validate";
 import { CreatePropertySchema } from "../schemas/property.schema";
 
 const router = Router();
+
+router.get("/", getProperties);
 
 router.post(
   "/",

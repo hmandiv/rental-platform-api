@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { createPropertyService } from "../services/property.service";
+import {
+  createPropertyService,
+  getPublicPropertiesService,
+} from "../services/property.service";
 
 export const createProperty = asyncHandler(
   async (req: Request, res: Response) => {
@@ -12,6 +15,18 @@ export const createProperty = asyncHandler(
     return res.status(201).json({
       success: true,
       message: "Property created successfully",
+      data: result,
+    });
+  },
+);
+
+export const getProperties = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await getPublicPropertiesService();
+
+    return res.status(200).json({
+      success: true,
+      message: "Properties fetched successfully",
       data: result,
     });
   },
