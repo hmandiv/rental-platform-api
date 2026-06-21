@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.routes";
 import uploadRoutes from "./routes/upload.routes";
 import propertyRoutes from "./routes/property.routes";
 import userRoutes from "./routes/user.routes";
+import leadRoutes from "./routes/lead.routes";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/leads", leadRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
