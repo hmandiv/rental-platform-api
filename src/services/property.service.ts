@@ -1,6 +1,7 @@
 import { CreatePropertyInput, Property } from "../types/property";
 import crypto from "node:crypto";
 import { admin, db } from "../config/firebaseAdmin";
+import { AppError } from "../utils/appError";
 
 export const createPropertyService = async (
   input: CreatePropertyInput,
@@ -40,4 +41,26 @@ export const getPublicPropertiesService = async (): Promise<Property[]> => {
       createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
     } as Property;
   });
+};
+
+export const getPublicPropertyByIdService = async (
+  propertyId: string,
+): Promise<Property> => {
+  const propertyDoc = await db.collection("properties").doc(propertyId).get();
+
+  if (!propertyDoc.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const data = propertyDoc.data();
+
+  if (!data || data.status !== "approved") {
+    throw new AppError("Property not found", 404);
+  }
+
+  return {
+    ...data,
+    id: propertyDoc.id,
+    createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+  } as Property;
 };

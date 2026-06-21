@@ -3,7 +3,9 @@ import { asyncHandler } from "../utils/asyncHandler";
 import {
   createPropertyService,
   getPublicPropertiesService,
+  getPublicPropertyByIdService,
 } from "../services/property.service";
+import { AppError } from "../utils/appError";
 
 export const createProperty = asyncHandler(
   async (req: Request, res: Response) => {
@@ -27,6 +29,24 @@ export const getProperties = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Properties fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const getPropertyById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const propertyId = req.params.id;
+
+    if (!propertyId || Array.isArray(propertyId)) {
+      throw new AppError("Property not found", 404);
+    }
+
+    const result = await getPublicPropertyByIdService(propertyId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Property fetched successfully",
       data: result,
     });
   },
