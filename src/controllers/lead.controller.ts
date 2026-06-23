@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
-import { createLeadService } from "../services/lead.service";
+import {
+  createLeadService,
+  getAdminLeadsService,
+} from "../services/lead.service";
 import { asyncHandler } from "../utils/asyncHandler";
 
 export const createLead = asyncHandler(async (req: Request, res: Response) => {
@@ -11,3 +14,15 @@ export const createLead = asyncHandler(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+export const getAdminLeads = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await getAdminLeadsService();
+
+    return res.status(200).json({
+      success: true,
+      message: "Leads fetched successfully",
+      data: result,
+    });
+  },
+);

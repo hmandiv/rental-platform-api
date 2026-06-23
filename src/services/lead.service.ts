@@ -35,3 +35,17 @@ export const createLeadService = async (
 
   return lead;
 };
+
+export const getAdminLeadsService = async (): Promise<Lead[]> => {
+  const snapshot = await db.collection("leads").get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+    } as Lead;
+  });
+};
