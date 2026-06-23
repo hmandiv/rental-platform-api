@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   createPropertyService,
+  getOwnerPropertiesService,
   getPublicPropertiesService,
   getPublicPropertyByIdService,
 } from "../services/property.service";
@@ -47,6 +48,18 @@ export const getPropertyById = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Property fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const getMyProperties = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await getOwnerPropertiesService(req.user!.uid);
+
+    return res.status(200).json({
+      success: true,
+      message: "Owner properties fetched successfully",
       data: result,
     });
   },

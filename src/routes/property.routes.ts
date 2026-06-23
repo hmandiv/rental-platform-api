@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createProperty,
+  getMyProperties,
   getProperties,
   getPropertyById,
 } from "../controllers/property.controller";
@@ -15,6 +16,7 @@ import { CreatePropertySchema } from "../schemas/property.schema";
 const router = Router();
 
 router.get("/", getProperties);
+router.get("/mine", requireAuth, requireRole("owner"), getMyProperties);
 router.get("/:id", getPropertyById);
 
 router.post(

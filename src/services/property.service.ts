@@ -64,3 +64,22 @@ export const getPublicPropertyByIdService = async (
     createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
   } as Property;
 };
+
+export const getOwnerPropertiesService = async (
+  ownerId: string,
+): Promise<Property[]> => {
+  const snapshot = await db
+    .collection("properties")
+    .where("ownerId", "==", ownerId)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+    } as Property;
+  });
+};
