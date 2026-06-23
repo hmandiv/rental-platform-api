@@ -28,4 +28,11 @@ export const CreatePropertySchema = z.object({
   images: z.array(PropertyImageSchema),
 });
 
+export const UpdatePropertyStatusSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+});
+
 export type CreatePropertyBody = z.infer<typeof CreatePropertySchema>;
+export type UpdatePropertyStatusBody = z.infer<
+  typeof UpdatePropertyStatusSchema
+>;

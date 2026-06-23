@@ -83,3 +83,41 @@ export const getOwnerPropertiesService = async (
     } as Property;
   });
 };
+
+export const getPendingPropertiesService = async (): Promise<Property[]> => {
+  const snapshot = await db
+    .collection("properties")
+    .where("status", "==", "pending")
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+    } as Property;
+  });
+};
+
+export const updatePropertyStatusService = async (
+  propertyId: string,
+  status: "approved" | "rejected",
+): Promise<{ id: string; status: "approved" | "rejected" }> => {
+  const propertyRef = db.collection("properties").doc(propertyId);
+  const propertySnap = await propertyRef.get();
+
+  if (!propertySnap.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  await propertyRef.update({
+    status,
+  });
+
+  return {
+    id: propertyId,
+    status,
+  };
+};
