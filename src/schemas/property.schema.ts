@@ -32,7 +32,19 @@ export const UpdatePropertyStatusSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 
+export const UpdatePropertySchema = z
+  .object({
+    title: z.string().min(1, "Title is required").optional(),
+    description: z.string().min(1, "Description is required").optional(),
+    price: z.number().positive("Price must be greater than 0").optional(),
+    location: z.string().min(1, "Location is required").optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
+
 export type CreatePropertyBody = z.infer<typeof CreatePropertySchema>;
+export type UpdatePropertyBody = z.infer<typeof UpdatePropertySchema>;
 export type UpdatePropertyStatusBody = z.infer<
   typeof UpdatePropertyStatusSchema
 >;

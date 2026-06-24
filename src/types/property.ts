@@ -18,3 +18,10 @@ export interface Property extends CreatePropertyInput {
   isFeatured: boolean;
   createdAt: FirebaseFirestore.Timestamp;
 }
+
+export type UpdateOwnerPropertyInput = {
+  title?: string;
+  description?: string;
+  price?: number;
+  location?: string;
+};

@@ -1,4 +1,8 @@
-import { CreatePropertyInput, Property } from "../types/property";
+import {
+  CreatePropertyInput,
+  Property,
+  UpdateOwnerPropertyInput,
+} from "../types/property";
 import crypto from "node:crypto";
 import { admin, db } from "../config/firebaseAdmin";
 import { AppError } from "../utils/appError";
@@ -120,4 +124,78 @@ export const updatePropertyStatusService = async (
     id: propertyId,
     status,
   };
+};
+
+export const getOwnerPropertyByIdService = async (
+  ownerId: string,
+  propertyId: string,
+): Promise<Property> => {
+  const propertyRef = db.collection("properties").doc(propertyId);
+  const propertySnap = await propertyRef.get();
+
+  if (!propertySnap.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const data = propertySnap.data();
+
+  if (!data || data.ownerId !== ownerId) {
+    throw new AppError("Forbidden", 403);
+  }
+
+  return {
+    ...data,
+    id: propertySnap.id,
+    createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+  } as Property;
+};
+
+export const updateOwnerPropertyService = async ({
+  ownerId,
+  propertyId,
+  input,
+}: {
+  ownerId: string;
+  propertyId: string;
+  input: UpdateOwnerPropertyInput;
+}): Promise<Property> => {
+  const propertyRef = db.collection("properties").doc(propertyId);
+  const propertySnap = await propertyRef.get();
+
+  if (!propertySnap.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const existingProperty = propertySnap.data();
+
+  if (!existingProperty || existingProperty.ownerId !== ownerId) {
+    throw new AppError("Forbidden", 403);
+  }
+
+  const updates: UpdateOwnerPropertyInput = {
+    ...(input.title !== undefined ? { title: input.title } : {}),
+    ...(input.description !== undefined
+      ? { description: input.description }
+      : {}),
+    ...(input.price !== undefined ? { price: input.price } : {}),
+    ...(input.location !== undefined ? { location: input.location } : {}),
+  };
+
+  await propertyRef.update({
+    ...updates,
+    status: "pending",
+  });
+
+  const updatedSnap = await propertyRef.get();
+  const updatedData = updatedSnap.data();
+
+  if (!updatedData) {
+    throw new AppError("Property not found", 404);
+  }
+
+  return {
+    ...updatedData,
+    id: updatedSnap.id,
+    createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
+  } as Property;
 };

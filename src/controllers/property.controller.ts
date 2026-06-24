@@ -3,9 +3,11 @@ import { asyncHandler } from "../utils/asyncHandler";
 import {
   createPropertyService,
   getOwnerPropertiesService,
+  getOwnerPropertyByIdService,
   getPendingPropertiesService,
   getPublicPropertiesService,
   getPublicPropertyByIdService,
+  updateOwnerPropertyService,
   updatePropertyStatusService,
 } from "../services/property.service";
 import { AppError } from "../utils/appError";
@@ -95,6 +97,46 @@ export const updatePropertyStatus = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Property status updated successfully",
+      data: result,
+    });
+  },
+);
+
+export const getMyPropertyById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const propertyId = req.params.id;
+
+    if (!propertyId || Array.isArray(propertyId)) {
+      throw new AppError("Property not found", 404);
+    }
+
+    const result = await getOwnerPropertyByIdService(req.user!.uid, propertyId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Owner property fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const updateProperty = asyncHandler(
+  async (req: Request, res: Response) => {
+    const propertyId = req.params.id;
+
+    if (!propertyId || Array.isArray(propertyId)) {
+      throw new AppError("Property not found", 404);
+    }
+
+    const result = await updateOwnerPropertyService({
+      ownerId: req.user!.uid,
+      propertyId,
+      input: req.body,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Property updated successfully",
       data: result,
     });
   },
