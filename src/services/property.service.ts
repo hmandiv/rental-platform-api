@@ -1,6 +1,7 @@
 import {
   CreatePropertyInput,
   Property,
+  PropertyActionUser,
   UpdateOwnerPropertyInput,
 } from "../types/property";
 import crypto from "node:crypto";
@@ -15,6 +16,9 @@ export const createPropertyService = async (
     ...input,
     status: "pending",
     isFeatured: false,
+    isArchived: false,
+    archivedAt: null,
+    archivedBy: null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -33,6 +37,7 @@ export const getPublicPropertiesService = async (): Promise<Property[]> => {
   const snapshot = await db
     .collection("properties")
     .where("status", "==", "approved")
+    .where("isArchived", "==", false)
     .orderBy("createdAt", "desc")
     .get();
 
@@ -43,6 +48,9 @@ export const getPublicPropertiesService = async (): Promise<Property[]> => {
       ...data,
       id: doc.id,
       createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+      archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+      isArchived: data.isArchived ?? false,
+      archivedBy: data.archivedBy ?? null,
     } as Property;
   });
 };
@@ -58,7 +66,7 @@ export const getPublicPropertyByIdService = async (
 
   const data = propertyDoc.data();
 
-  if (!data || data.status !== "approved") {
+  if (!data || data.status !== "approved" || data.isArchived === true) {
     throw new AppError("Property not found", 404);
   }
 
@@ -92,6 +100,7 @@ export const getPendingPropertiesService = async (): Promise<Property[]> => {
   const snapshot = await db
     .collection("properties")
     .where("status", "==", "pending")
+    .where("isArchived", "==", false)
     .get();
 
   return snapshot.docs.map((doc) => {
@@ -198,4 +207,132 @@ export const updateOwnerPropertyService = async ({
     id: updatedSnap.id,
     createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
   } as Property;
+};
+
+export const archivePropertyService = async ({
+  propertyId,
+  user,
+}: {
+  propertyId: string;
+  user: PropertyActionUser;
+}): Promise<Property> => {
+  const propertyRef = db.collection("properties").doc(propertyId);
+  const propertySnap = await propertyRef.get();
+
+  if (!propertySnap.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const existingProperty = propertySnap.data();
+
+  ensureCanManagePropertyLifecycle(existingProperty, user);
+
+  await propertyRef.update({
+    isArchived: true,
+    archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+    archivedBy: user.uid,
+  });
+
+  const updatedSnap = await propertyRef.get();
+  const updatedData = updatedSnap.data();
+
+  if (!updatedData) {
+    throw new AppError("Property not found", 404);
+  }
+
+  return {
+    ...updatedData,
+    id: updatedSnap.id,
+    createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: updatedData.isArchived ?? false,
+    archivedBy: updatedData.archivedBy ?? null,
+  } as Property;
+};
+
+export const relistPropertyService = async ({
+  propertyId,
+  user,
+}: {
+  propertyId: string;
+  user: PropertyActionUser;
+}): Promise<Property> => {
+  const propertyRef = db.collection("properties").doc(propertyId);
+  const propertySnap = await propertyRef.get();
+
+  if (!propertySnap.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const existingProperty = propertySnap.data();
+
+  ensureCanManagePropertyLifecycle(existingProperty, user);
+
+  await propertyRef.update({
+    isArchived: false,
+    archivedAt: null,
+    archivedBy: null,
+    status: "pending",
+  });
+
+  const updatedSnap = await propertyRef.get();
+  const updatedData = updatedSnap.data();
+
+  if (!updatedData) {
+    throw new AppError("Property not found", 404);
+  }
+
+  return {
+    ...updatedData,
+    id: updatedSnap.id,
+    createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: updatedData.isArchived ?? false,
+    archivedBy: updatedData.archivedBy ?? null,
+  } as Property;
+};
+
+export const getArchivedPropertiesService = async (): Promise<Property[]> => {
+  const snapshot = await db
+    .collection("properties")
+    .where("isArchived", "==", true)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+      archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+      isArchived: data.isArchived ?? false,
+      archivedBy: data.archivedBy ?? null,
+    } as Property;
+  });
+};
+
+const ensureCanManagePropertyLifecycle = (
+  property: FirebaseFirestore.DocumentData | undefined,
+  user: PropertyActionUser,
+) => {
+  if (!property) {
+    throw new AppError("Property not found", 404);
+  }
+
+  if (user.role === "admin") {
+    return;
+  }
+
+  if (user.role !== "owner") {
+    throw new AppError("Forbidden", 403);
+  }
+
+  if (!user.isApproved) {
+    throw new AppError("Owner account is not approved", 403);
+  }
+
+  if (property.ownerId !== user.uid) {
+    throw new AppError("Forbidden", 403);
+  }
 };
