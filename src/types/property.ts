@@ -34,3 +34,5 @@ export type PropertyActionUser = {
   role: string;
   isApproved: boolean;
 };
+
+export type AdminPropertyStatusFilter = "pending" | "approved" | "rejected";

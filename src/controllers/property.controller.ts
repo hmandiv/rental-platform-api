@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import {
   archivePropertyService,
   createPropertyService,
+  getAdminPropertiesService,
   getArchivedPropertiesService,
   getOwnerPropertiesService,
   getOwnerPropertyByIdService,
@@ -79,6 +80,24 @@ export const getPendingProperties = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Pending properties fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const getAdminProperties = asyncHandler(
+  async (req: Request, res: Response) => {
+    const status = req.query.status;
+
+    if (status !== undefined && typeof status !== "string") {
+      throw new AppError("Invalid property status filter", 400);
+    }
+
+    const result = await getAdminPropertiesService(status);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin properties fetched successfully",
       data: result,
     });
   },

@@ -1,4 +1,5 @@
 import {
+  AdminPropertyStatusFilter,
   CreatePropertyInput,
   Property,
   PropertyActionUser,
@@ -92,6 +93,9 @@ export const getOwnerPropertiesService = async (
       ...data,
       id: doc.id,
       createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+      archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+      isArchived: data.isArchived ?? false,
+      archivedBy: data.archivedBy ?? null,
     } as Property;
   });
 };
@@ -112,6 +116,46 @@ export const getPendingPropertiesService = async (): Promise<Property[]> => {
       createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
     } as Property;
   });
+};
+
+const allowedAdminPropertyStatuses: AdminPropertyStatusFilter[] = [
+  "pending",
+  "approved",
+  "rejected",
+];
+
+export const getAdminPropertiesService = async (
+  status?: string,
+): Promise<Property[]> => {
+  if (
+    status &&
+    !allowedAdminPropertyStatuses.includes(status as AdminPropertyStatusFilter)
+  ) {
+    throw new AppError("Invalid property status filter", 400);
+  }
+
+  let query: FirebaseFirestore.Query = db.collection("properties");
+
+  if (status) {
+    query = query.where("status", "==", status);
+  }
+
+  const snapshot = await query.get();
+
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+        archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+        isArchived: data.isArchived ?? false,
+        archivedBy: data.archivedBy ?? null,
+      } as Property;
+    })
+    .filter((property) => property.isArchived !== true);
 };
 
 export const updatePropertyStatusService = async (

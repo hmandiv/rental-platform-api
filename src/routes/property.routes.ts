@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   archiveProperty,
   createProperty,
+  getAdminProperties,
   getArchivedProperties,
   getMyProperties,
   getMyPropertyById,
@@ -40,6 +41,8 @@ router.get(
   requireRole("admin"),
   getArchivedProperties,
 );
+
+router.get("/admin", requireAuth, requireRole("admin"), getAdminProperties);
 
 router.get("/:id", getPropertyById);
 
