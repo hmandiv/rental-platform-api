@@ -3,6 +3,7 @@ import {
   archiveProperty,
   createProperty,
   getAdminProperties,
+  getAdminPropertyById,
   getArchivedProperties,
   getMyProperties,
   getMyPropertyById,
@@ -43,6 +44,13 @@ router.get(
 );
 
 router.get("/admin", requireAuth, requireRole("admin"), getAdminProperties);
+
+router.get(
+  "/admin/:id",
+  requireAuth,
+  requireRole("admin"),
+  getAdminPropertyById,
+);
 
 router.get("/:id", getPropertyById);
 

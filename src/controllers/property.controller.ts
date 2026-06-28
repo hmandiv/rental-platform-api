@@ -4,6 +4,7 @@ import {
   archivePropertyService,
   createPropertyService,
   getAdminPropertiesService,
+  getAdminPropertyByIdService,
   getArchivedPropertiesService,
   getOwnerPropertiesService,
   getOwnerPropertyByIdService,
@@ -98,6 +99,24 @@ export const getAdminProperties = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Admin properties fetched successfully",
+      data: result,
+    });
+  },
+);
+
+export const getAdminPropertyById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const propertyId = req.params.id;
+
+    if (!propertyId || Array.isArray(propertyId)) {
+      throw new AppError("Property not found", 404);
+    }
+
+    const result = await getAdminPropertyByIdService(propertyId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin property fetched successfully",
       data: result,
     });
   },

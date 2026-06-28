@@ -158,6 +158,31 @@ export const getAdminPropertiesService = async (
     .filter((property) => property.isArchived !== true);
 };
 
+export const getAdminPropertyByIdService = async (
+  propertyId: string,
+): Promise<Property> => {
+  const propertyDoc = await db.collection("properties").doc(propertyId).get();
+
+  if (!propertyDoc.exists) {
+    throw new AppError("Property not found", 404);
+  }
+
+  const data = propertyDoc.data();
+
+  if (!data) {
+    throw new AppError("Property not found", 404);
+  }
+
+  return {
+    ...data,
+    id: propertyDoc.id,
+    createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: data.isArchived ?? false,
+    archivedBy: data.archivedBy ?? null,
+  } as Property;
+};
+
 export const updatePropertyStatusService = async (
   propertyId: string,
   status: "approved" | "rejected",
