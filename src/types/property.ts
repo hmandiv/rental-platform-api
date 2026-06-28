@@ -19,6 +19,9 @@ export interface Property extends CreatePropertyInput {
   isArchived: boolean;
   archivedAt: string | null;
   archivedBy: string | null;
+  rejectionComment: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
   createdAt: FirebaseFirestore.Timestamp;
 }
 
@@ -36,3 +39,8 @@ export type PropertyActionUser = {
 };
 
 export type AdminPropertyStatusFilter = "pending" | "approved" | "rejected";
+
+export type UpdatePropertyStatusInput = {
+  status: "approved" | "rejected";
+  rejectionComment?: string;
+};

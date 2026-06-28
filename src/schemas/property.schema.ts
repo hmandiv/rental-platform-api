@@ -28,9 +28,24 @@ export const CreatePropertySchema = z.object({
   images: z.array(PropertyImageSchema),
 });
 
-export const UpdatePropertyStatusSchema = z.object({
-  status: z.enum(["approved", "rejected"]),
-});
+export const UpdatePropertyStatusSchema = z
+  .object({
+    status: z.enum(["approved", "rejected"]),
+    rejectionComment: z
+      .string()
+      .trim()
+      .max(1000, "Rejection comment must be 1000 characters or less")
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "rejected" && !data.rejectionComment?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["rejectionComment"],
+        message: "Rejection comment is required when rejecting a property",
+      });
+    }
+  });
 
 export const UpdatePropertySchema = z
   .object({

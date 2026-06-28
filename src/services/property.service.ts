@@ -4,6 +4,7 @@ import {
   Property,
   PropertyActionUser,
   UpdateOwnerPropertyInput,
+  UpdatePropertyStatusInput,
 } from "../types/property";
 import crypto from "node:crypto";
 import { admin, db } from "../config/firebaseAdmin";
@@ -20,6 +21,9 @@ export const createPropertyService = async (
     isArchived: false,
     archivedAt: null,
     archivedBy: null,
+    rejectionComment: null,
+    rejectedAt: null,
+    rejectedBy: null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -183,10 +187,15 @@ export const getAdminPropertyByIdService = async (
   } as Property;
 };
 
-export const updatePropertyStatusService = async (
-  propertyId: string,
-  status: "approved" | "rejected",
-): Promise<{ id: string; status: "approved" | "rejected" }> => {
+export const updatePropertyStatusService = async ({
+  propertyId,
+  input,
+  adminId,
+}: {
+  propertyId: string;
+  input: UpdatePropertyStatusInput;
+  adminId: string;
+}): Promise<Property> => {
   const propertyRef = db.collection("properties").doc(propertyId);
   const propertySnap = await propertyRef.get();
 
@@ -194,14 +203,43 @@ export const updatePropertyStatusService = async (
     throw new AppError("Property not found", 404);
   }
 
-  await propertyRef.update({
-    status,
-  });
+  const updates: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData> =
+    {
+      status: input.status,
+    };
+
+  if (input.status === "rejected") {
+    updates.rejectionComment = input.rejectionComment?.trim() ?? "";
+    updates.rejectedAt = admin.firestore.FieldValue.serverTimestamp();
+    updates.rejectedBy = adminId;
+  }
+
+  if (input.status === "approved") {
+    updates.rejectionComment = null;
+    updates.rejectedAt = null;
+    updates.rejectedBy = null;
+  }
+
+  await propertyRef.update(updates);
+
+  const updatedSnap = await propertyRef.get();
+  const updatedData = updatedSnap.data();
+
+  if (!updatedData) {
+    throw new AppError("Property not found", 404);
+  }
 
   return {
-    id: propertyId,
-    status,
-  };
+    ...updatedData,
+    id: updatedSnap.id,
+    createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: updatedData.isArchived ?? false,
+    archivedBy: updatedData.archivedBy ?? null,
+    rejectionComment: updatedData.rejectionComment ?? null,
+    rejectedAt: updatedData.rejectedAt?.toDate?.().toISOString?.() ?? null,
+    rejectedBy: updatedData.rejectedBy ?? null,
+  } as Property;
 };
 
 export const getOwnerPropertyByIdService = async (
@@ -225,6 +263,12 @@ export const getOwnerPropertyByIdService = async (
     ...data,
     id: propertySnap.id,
     createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: data.isArchived ?? false,
+    archivedBy: data.archivedBy ?? null,
+    rejectionComment: data.rejectionComment ?? null,
+    rejectedAt: data.rejectedAt?.toDate?.().toISOString?.() ?? null,
+    rejectedBy: data.rejectedBy ?? null,
   } as Property;
 };
 
@@ -262,6 +306,9 @@ export const updateOwnerPropertyService = async ({
   await propertyRef.update({
     ...updates,
     status: "pending",
+    rejectionComment: null,
+    rejectedAt: null,
+    rejectedBy: null,
   });
 
   const updatedSnap = await propertyRef.get();
@@ -275,6 +322,12 @@ export const updateOwnerPropertyService = async ({
     ...updatedData,
     id: updatedSnap.id,
     createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
+    archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
+    isArchived: updatedData.isArchived ?? false,
+    archivedBy: updatedData.archivedBy ?? null,
+    rejectionComment: updatedData.rejectionComment ?? null,
+    rejectedAt: updatedData.rejectedAt?.toDate?.().toISOString?.() ?? null,
+    rejectedBy: updatedData.rejectedBy ?? null,
   } as Property;
 };
 

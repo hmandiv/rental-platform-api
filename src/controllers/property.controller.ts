@@ -130,10 +130,11 @@ export const updatePropertyStatus = asyncHandler(
       throw new AppError("Property not found", 404);
     }
 
-    const result = await updatePropertyStatusService(
+    const result = await updatePropertyStatusService({
       propertyId,
-      req.body.status,
-    );
+      input: req.body,
+      adminId: req.user!.uid,
+    });
 
     return res.status(200).json({
       success: true,
