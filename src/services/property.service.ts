@@ -16,6 +16,20 @@ export const createPropertyService = async (
   const property = {
     id: crypto.randomUUID(),
     ...input,
+
+    propertyType: input.propertyType ?? null,
+    bedrooms: input.bedrooms ?? null,
+    bathrooms: input.bathrooms ?? null,
+    squareFeet: input.squareFeet ?? null,
+    availableFrom: input.availableFrom ?? null,
+    leaseTerm: input.leaseTerm ?? null,
+
+    parkingAvailable: input.parkingAvailable ?? null,
+    utilitiesIncluded: input.utilitiesIncluded ?? null,
+    laundryAvailable: input.laundryAvailable ?? null,
+    furnished: input.furnished ?? null,
+    petFriendly: input.petFriendly ?? null,
+
     status: "pending",
     isFeatured: false,
     isArchived: false,
@@ -301,6 +315,31 @@ export const updateOwnerPropertyService = async ({
       : {}),
     ...(input.price !== undefined ? { price: input.price } : {}),
     ...(input.location !== undefined ? { location: input.location } : {}),
+
+    ...(input.propertyType !== undefined
+      ? { propertyType: input.propertyType }
+      : {}),
+    ...(input.bedrooms !== undefined ? { bedrooms: input.bedrooms } : {}),
+    ...(input.bathrooms !== undefined ? { bathrooms: input.bathrooms } : {}),
+    ...(input.squareFeet !== undefined ? { squareFeet: input.squareFeet } : {}),
+    ...(input.availableFrom !== undefined
+      ? { availableFrom: input.availableFrom }
+      : {}),
+    ...(input.leaseTerm !== undefined ? { leaseTerm: input.leaseTerm } : {}),
+
+    ...(input.parkingAvailable !== undefined
+      ? { parkingAvailable: input.parkingAvailable }
+      : {}),
+    ...(input.utilitiesIncluded !== undefined
+      ? { utilitiesIncluded: input.utilitiesIncluded }
+      : {}),
+    ...(input.laundryAvailable !== undefined
+      ? { laundryAvailable: input.laundryAvailable }
+      : {}),
+    ...(input.furnished !== undefined ? { furnished: input.furnished } : {}),
+    ...(input.petFriendly !== undefined
+      ? { petFriendly: input.petFriendly }
+      : {}),
   };
 
   await propertyRef.update({

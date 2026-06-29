@@ -1,9 +1,34 @@
+export type PropertyType =
+  | "apartment"
+  | "house"
+  | "basement"
+  | "condo"
+  | "room"
+  | "commercial"
+  | "other";
+
+export type LeaseTerm = "monthly" | "yearly" | "short_term" | "flexible";
+
 export interface CreatePropertyInput {
   title: string;
   description: string;
   price: number;
   location: string;
   images: PropertyImage[];
+
+  propertyType: PropertyType | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  squareFeet: number | null;
+  availableFrom: string | null;
+  leaseTerm: LeaseTerm | null;
+
+  parkingAvailable: boolean | null;
+  utilitiesIncluded: boolean | null;
+  laundryAvailable: boolean | null;
+  furnished: boolean | null;
+  petFriendly: boolean | null;
+
   ownerId: string;
 }
 
@@ -30,6 +55,19 @@ export type UpdateOwnerPropertyInput = {
   description?: string;
   price?: number;
   location?: string;
+
+  propertyType?: PropertyType | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  squareFeet?: number | null;
+  availableFrom?: string | null;
+  leaseTerm?: LeaseTerm | null;
+
+  parkingAvailable?: boolean | null;
+  utilitiesIncluded?: boolean | null;
+  laundryAvailable?: boolean | null;
+  furnished?: boolean | null;
+  petFriendly?: boolean | null;
 };
 
 export type PropertyActionUser = {
