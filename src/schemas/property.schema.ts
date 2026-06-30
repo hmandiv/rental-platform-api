@@ -21,16 +21,25 @@ export const CustomPropertyFactSchema = z.object({
     .max(80, "Custom fact value must be 80 characters or less"),
 });
 
-const CustomPropertyFactsCreateSchema = z
+const CustomPropertyFactsBaseSchema = z
   .array(CustomPropertyFactSchema)
   .max(6, "You can add up to 6 custom facts")
-  .optional()
-  .default([]);
+  .refine(
+    (facts) => {
+      const labels = facts.map((fact) => fact.label.trim().toLowerCase());
 
-const CustomPropertyFactsUpdateSchema = z
-  .array(CustomPropertyFactSchema)
-  .max(6, "You can add up to 6 custom facts")
-  .optional();
+      return new Set(labels).size === labels.length;
+    },
+    {
+      message: "Custom fact labels must be unique",
+    },
+  );
+
+const CustomPropertyFactsCreateSchema =
+  CustomPropertyFactsBaseSchema.optional().default([]);
+
+const CustomPropertyFactsUpdateSchema =
+  CustomPropertyFactsBaseSchema.optional();
 
 export const PropertyTypeSchema = z
   .enum([
