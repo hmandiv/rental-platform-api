@@ -25,12 +25,17 @@ export const createLeadService = async (
     id: crypto.randomUUID(),
     propertyId: input.propertyId,
     ownerId: property.ownerId,
-    name: input.name,
-    email: input.email,
-    message: input.message,
+    property: {
+      title: property.title,
+      location: property.location,
+      price: property.price,
+    },
+    name: input.name.trim(),
+    email: input.email.trim().toLowerCase(),
+    message: input.message.trim(),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
-
+  
   await db.collection("leads").doc(lead.id).set(lead);
 
   return lead;
