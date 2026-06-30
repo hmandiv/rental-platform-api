@@ -30,6 +30,8 @@ export const createPropertyService = async (
     furnished: input.furnished ?? null,
     petFriendly: input.petFriendly ?? null,
 
+    customFacts: input.customFacts ?? [],
+
     status: "pending",
     isFeatured: false,
     isArchived: false,
@@ -70,6 +72,7 @@ export const getPublicPropertiesService = async (): Promise<Property[]> => {
       archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
       isArchived: data.isArchived ?? false,
       archivedBy: data.archivedBy ?? null,
+      customFacts: data.customFacts ?? [],
     } as Property;
   });
 };
@@ -92,6 +95,7 @@ export const getPublicPropertyByIdService = async (
   return {
     ...data,
     id: propertyDoc.id,
+    customFacts: data.customFacts ?? [],
     createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
   } as Property;
 };
@@ -114,6 +118,7 @@ export const getOwnerPropertiesService = async (
       archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
       isArchived: data.isArchived ?? false,
       archivedBy: data.archivedBy ?? null,
+      customFacts: data.customFacts ?? [],
     } as Property;
   });
 };
@@ -131,6 +136,7 @@ export const getPendingPropertiesService = async (): Promise<Property[]> => {
     return {
       ...data,
       id: doc.id,
+      customFacts: data.customFacts ?? [],
       createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
     } as Property;
   });
@@ -171,6 +177,7 @@ export const getAdminPropertiesService = async (
         archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
         isArchived: data.isArchived ?? false,
         archivedBy: data.archivedBy ?? null,
+        customFacts: data.customFacts ?? [],
       } as Property;
     })
     .filter((property) => property.isArchived !== true);
@@ -198,6 +205,7 @@ export const getAdminPropertyByIdService = async (
     archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
     isArchived: data.isArchived ?? false,
     archivedBy: data.archivedBy ?? null,
+    customFacts: data.customFacts ?? [],
   } as Property;
 };
 
@@ -283,6 +291,7 @@ export const getOwnerPropertyByIdService = async (
     rejectionComment: data.rejectionComment ?? null,
     rejectedAt: data.rejectedAt?.toDate?.().toISOString?.() ?? null,
     rejectedBy: data.rejectedBy ?? null,
+    customFacts: data.customFacts ?? [],
   } as Property;
 };
 
@@ -340,6 +349,9 @@ export const updateOwnerPropertyService = async ({
     ...(input.petFriendly !== undefined
       ? { petFriendly: input.petFriendly }
       : {}),
+    ...(input.customFacts !== undefined
+      ? { customFacts: input.customFacts }
+      : {}),
   };
 
   await propertyRef.update({
@@ -367,6 +379,7 @@ export const updateOwnerPropertyService = async ({
     rejectionComment: updatedData.rejectionComment ?? null,
     rejectedAt: updatedData.rejectedAt?.toDate?.().toISOString?.() ?? null,
     rejectedBy: updatedData.rejectedBy ?? null,
+    customFacts: updatedData.customFacts ?? [],
   } as Property;
 };
 
@@ -408,6 +421,7 @@ export const archivePropertyService = async ({
     archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
     isArchived: updatedData.isArchived ?? false,
     archivedBy: updatedData.archivedBy ?? null,
+    customFacts: updatedData.customFacts ?? [],
   } as Property;
 };
 
@@ -450,6 +464,7 @@ export const relistPropertyService = async ({
     archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
     isArchived: updatedData.isArchived ?? false,
     archivedBy: updatedData.archivedBy ?? null,
+    customFacts: updatedData.customFacts ?? [],
   } as Property;
 };
 
@@ -469,6 +484,7 @@ export const getArchivedPropertiesService = async (): Promise<Property[]> => {
       archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
       isArchived: data.isArchived ?? false,
       archivedBy: data.archivedBy ?? null,
+      customFacts: data.customFacts ?? [],
     } as Property;
   });
 };

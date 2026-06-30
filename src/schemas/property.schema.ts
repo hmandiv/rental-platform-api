@@ -7,6 +7,31 @@ export const PropertyImageSchema = z.object({
     .min(1, "Image publicId is required"),
 });
 
+export const CustomPropertyFactSchema = z.object({
+  label: z
+    .string("Custom fact label is required")
+    .trim()
+    .min(1, "Custom fact label is required")
+    .max(40, "Custom fact label must be 40 characters or less"),
+
+  value: z
+    .string("Custom fact value is required")
+    .trim()
+    .min(1, "Custom fact value is required")
+    .max(80, "Custom fact value must be 80 characters or less"),
+});
+
+const CustomPropertyFactsCreateSchema = z
+  .array(CustomPropertyFactSchema)
+  .max(6, "You can add up to 6 custom facts")
+  .optional()
+  .default([]);
+
+const CustomPropertyFactsUpdateSchema = z
+  .array(CustomPropertyFactSchema)
+  .max(6, "You can add up to 6 custom facts")
+  .optional();
+
 export const PropertyTypeSchema = z
   .enum([
     "apartment",
@@ -130,6 +155,8 @@ export const CreatePropertySchema = z.object({
   laundryAvailable: OptionalBooleanCreateSchema,
   furnished: OptionalBooleanCreateSchema,
   petFriendly: OptionalBooleanCreateSchema,
+
+  customFacts: CustomPropertyFactsCreateSchema,
 });
 
 export const UpdatePropertyStatusSchema = z
@@ -170,6 +197,8 @@ export const UpdatePropertySchema = z
     laundryAvailable: OptionalBooleanUpdateSchema,
     furnished: OptionalBooleanUpdateSchema,
     petFriendly: OptionalBooleanUpdateSchema,
+
+    customFacts: CustomPropertyFactsUpdateSchema,
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required",

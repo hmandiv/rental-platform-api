@@ -29,12 +29,19 @@ export interface CreatePropertyInput {
   furnished: boolean | null;
   petFriendly: boolean | null;
 
+  customFacts: CustomPropertyFact[];
+
   ownerId: string;
 }
 
 export interface PropertyImage {
   url: string;
   publicId: string;
+}
+
+export interface CustomPropertyFact {
+  label: string;
+  value: string;
 }
 
 export interface Property extends CreatePropertyInput {
@@ -68,6 +75,8 @@ export type UpdateOwnerPropertyInput = {
   laundryAvailable?: boolean | null;
   furnished?: boolean | null;
   petFriendly?: boolean | null;
+
+  customFacts?: CustomPropertyFact[];
 };
 
 export type PropertyActionUser = {
