@@ -150,7 +150,9 @@ export const CreatePropertySchema = z.object({
     .trim()
     .min(1, "Location is required"),
 
-  images: z.array(PropertyImageSchema),
+  images: z
+    .array(PropertyImageSchema)
+    .min(1, "At least one property image is required"),
 
   propertyType: PropertyTypeSchema,
   bedrooms: OptionalNonNegativeNumberCreateSchema,
