@@ -196,6 +196,11 @@ export const UpdatePropertySchema = z
     price: z.number().positive("Price must be greater than 0").optional(),
     location: z.string().min(1, "Location is required").optional(),
 
+    images: z
+      .array(PropertyImageSchema)
+      .min(1, "At least one property image is required")
+      .optional(),
+
     propertyType: UpdatePropertyTypeSchema,
     bedrooms: OptionalNonNegativeNumberUpdateSchema,
     bathrooms: OptionalNonNegativeNumberUpdateSchema,

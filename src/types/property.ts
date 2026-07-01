@@ -62,6 +62,7 @@ export type UpdateOwnerPropertyInput = {
   description?: string;
   price?: number;
   location?: string;
+  images?: PropertyImage[];
 
   propertyType?: PropertyType | null;
   bedrooms?: number | null;

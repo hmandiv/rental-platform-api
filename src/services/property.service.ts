@@ -284,6 +284,7 @@ export const getOwnerPropertyByIdService = async (
   return {
     ...data,
     id: propertySnap.id,
+    images: data.images ?? [],
     createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
     archivedAt: data.archivedAt?.toDate?.().toISOString?.() ?? null,
     isArchived: data.isArchived ?? false,
@@ -324,6 +325,7 @@ export const updateOwnerPropertyService = async ({
       : {}),
     ...(input.price !== undefined ? { price: input.price } : {}),
     ...(input.location !== undefined ? { location: input.location } : {}),
+    ...(input.images !== undefined ? { images: input.images } : {}),
 
     ...(input.propertyType !== undefined
       ? { propertyType: input.propertyType }
@@ -372,6 +374,7 @@ export const updateOwnerPropertyService = async ({
   return {
     ...updatedData,
     id: updatedSnap.id,
+    images: updatedData.images ?? [],
     createdAt: updatedData.createdAt?.toDate?.().toISOString?.() ?? null,
     archivedAt: updatedData.archivedAt?.toDate?.().toISOString?.() ?? null,
     isArchived: updatedData.isArchived ?? false,
