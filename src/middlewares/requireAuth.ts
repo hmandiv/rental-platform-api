@@ -14,7 +14,7 @@ export const requireAuth = async (
       return next(new AppError("Unauthorized - invalid auth header", 401));
     }
 
-    const token = authHeader.split("Bearer ")[1];
+    const token = authHeader.split("Bearer ")[1]?.trim();
 
     if (!token) {
       return next(new AppError("Unauthorized — no token provided", 401));
