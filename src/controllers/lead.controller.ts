@@ -3,10 +3,16 @@ import {
   createLeadService,
   getAdminLeadsService,
 } from "../services/lead.service";
+import { verifyTurnstileToken } from "../services/turnstile.service";
+import { CreateLeadBody } from "../schemas/lead.schema";
 import { asyncHandler } from "../utils/asyncHandler";
 
 export const createLead = asyncHandler(async (req: Request, res: Response) => {
-  const result = await createLeadService(req.body);
+  const { turnstileToken, ...leadInput } = req.body as CreateLeadBody;
+
+  await verifyTurnstileToken(turnstileToken, req.ip);
+
+  const result = await createLeadService(leadInput);
 
   return res.status(201).json({
     success: true,

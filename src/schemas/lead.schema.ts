@@ -21,6 +21,12 @@ export const CreateLeadSchema = z.object({
     .trim()
     .min(1, "Message is required")
     .max(1000, "Message must be 1000 characters or less"),
+
+  turnstileToken: z
+    .string("Spam protection token is required")
+    .trim()
+    .min(1, "Spam protection token is required")
+    .max(2048, "Spam protection token is invalid"),
 });
 
 export type CreateLeadBody = z.infer<typeof CreateLeadSchema>;

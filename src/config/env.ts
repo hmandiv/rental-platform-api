@@ -15,6 +15,7 @@ const getEnv = (key: string, defaultValue?: string): string => {
 export const env = {
   NODE_ENV: getEnv("NODE_ENV", "development"),
   PORT: Number(getEnv("PORT", "5000")),
+  TURNSTILE_SECRET_KEY: getEnv("TURNSTILE_SECRET_KEY"),
 };
 
 export const isDev = env.NODE_ENV === "development";
