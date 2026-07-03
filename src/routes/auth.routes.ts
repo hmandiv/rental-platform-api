@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { syncUser } from "../controllers/auth.controller";
+import { signupOwner } from "../controllers/auth.controller";
 import { validate } from "../middlewares/validate";
-import { SyncUserSchema } from "../schemas/auth.schema";
+import { SignupSchema } from "../schemas/auth.schema";
 
 const router = Router();
 
-router.post("/sync-user", validate(SyncUserSchema), syncUser);
+router.post("/signup", validate(SignupSchema), signupOwner);
 
 export default router;
