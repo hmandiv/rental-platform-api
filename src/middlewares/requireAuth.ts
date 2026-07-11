@@ -21,6 +21,8 @@ export const requireAuth = async (
     }
 
     const decoded = await admin.auth().verifyIdToken(token);
+    const authUser = await admin.auth().getUser(decoded.uid);
+    const emailVerified = authUser.emailVerified === true;
 
     // NOTE: This performs a Firestore read on every authenticated request.
     // This is acceptable for the current app scale and keeps role/account data centralized.
@@ -35,10 +37,18 @@ export const requireAuth = async (
 
     const userData = userDoc.data();
 
+    if (emailVerified && userData?.emailVerified !== true) {
+      await userDoc.ref.update({
+        emailVerified: true,
+        emailVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
     req.user = {
       uid: decoded.uid,
       role: userData?.role,
       isApproved: userData?.isApproved,
+      emailVerified,
       name: userData?.name,
       email: userData?.email,
     };

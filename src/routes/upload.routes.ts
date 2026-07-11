@@ -5,12 +5,14 @@ import {
   requireAuth,
   requireRole,
 } from "../middlewares/requireAuth";
+import { requireEmailVerified } from "../middlewares/requireEmailVerified";
 
 const router = Router();
 
 router.post(
   "/sign",
   requireAuth,
+  requireEmailVerified,
   requireRole("owner", "admin"),
   requireApproved,
   getUploadSignature,

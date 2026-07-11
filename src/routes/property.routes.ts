@@ -19,6 +19,7 @@ import {
   requireAuth,
   requireRole,
 } from "../middlewares/requireAuth";
+import { requireEmailVerified } from "../middlewares/requireEmailVerified";
 import { validate } from "../middlewares/validate";
 import {
   CreatePropertySchema,
@@ -66,6 +67,7 @@ router.patch(
   "/:id/archive",
   requireAuth,
   requireRole("owner", "admin"),
+  requireEmailVerified,
   archiveProperty,
 );
 
@@ -73,6 +75,7 @@ router.patch(
   "/:id/relist",
   requireAuth,
   requireRole("owner", "admin"),
+  requireEmailVerified,
   relistProperty,
 );
 
@@ -80,6 +83,7 @@ router.patch(
   "/:id",
   requireAuth,
   requireRole("owner"),
+  requireEmailVerified,
   requireApproved,
   validate(UpdatePropertySchema),
   updateProperty,
@@ -89,6 +93,7 @@ router.post(
   "/",
   requireAuth,
   requireRole("owner", "admin"),
+  requireEmailVerified,
   requireApproved,
   validate(CreatePropertySchema),
   createProperty,
