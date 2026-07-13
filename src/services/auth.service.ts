@@ -1,3 +1,4 @@
+import { env } from "../config/env";
 import { admin, db } from "../config/firebaseAdmin";
 import {
   CreateOwnerAccountInput,
@@ -7,23 +8,36 @@ import {
   ResendVerificationEmailResult,
 } from "../types/auth";
 import { AppError } from "../utils/appError";
+import { sendVerificationEmail } from "./email.service";
 
 const VERIFICATION_EMAIL_COOLDOWN_MS = 5 * 60 * 1000;
 
-const generateAndLogVerificationLink = async (email: string) => {
+const sendOwnerVerificationEmail = async ({
+  email,
+  name,
+}: {
+  email: string;
+  name: string;
+}) => {
   const verificationLink = await admin
     .auth()
     .generateEmailVerificationLink(email);
 
-  console.info(
-    [
-      "Email verification link generated:",
-      `User: ${email}`,
-      `Link: ${verificationLink}`,
-    ].join("\n"),
-  );
+  await sendVerificationEmail({
+    to: email,
+    name,
+    verificationLink,
+  });
 
-  return verificationLink;
+  if (env.NODE_ENV !== "production") {
+    console.info(
+      [
+        "Email verification link sent:",
+        `User: ${email}`,
+        `Link: ${verificationLink}`,
+      ].join("\n"),
+    );
+  }
 };
 
 export const createOwnerAccountService = async ({
@@ -59,7 +73,10 @@ export const createOwnerAccountService = async ({
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    await generateAndLogVerificationLink(normalizedEmail);
+    await sendOwnerVerificationEmail({
+      email: normalizedEmail,
+      name: trimmedName,
+    });
 
     return {
       id: userRecord.uid,
@@ -135,7 +152,13 @@ export const resendVerificationEmailService = async ({
     );
   }
 
-  await generateAndLogVerificationLink(normalizedEmail);
+  const displayName =
+    typeof userData?.name === "string" ? userData.name : "there";
+
+  await sendOwnerVerificationEmail({
+    email: normalizedEmail,
+    name: displayName,
+  });
 
   await userRef.update({
     emailVerified: false,

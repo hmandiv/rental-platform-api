@@ -16,6 +16,8 @@ export const env = {
   NODE_ENV: getEnv("NODE_ENV", "development"),
   PORT: Number(getEnv("PORT", "5000")),
   TURNSTILE_SECRET_KEY: getEnv("TURNSTILE_SECRET_KEY"),
+  RESEND_API_KEY: getEnv("RESEND_API_KEY"),
+  RESEND_FROM_EMAIL: getEnv("RESEND_FROM_EMAIL"),
 };
 
 export const isDev = env.NODE_ENV === "development";
