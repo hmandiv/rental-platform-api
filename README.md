@@ -1,316 +1,428 @@
-# Rental Platform API
+# Direct Rent API
 
-A scalable Node.js + Express + TypeScript backend for a rental platform.
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=flat&logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?style=flat&logo=express&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Admin%20SDK-FFCA28?style=flat&logo=firebase&logoColor=black)
+![License](https://img.shields.io/badge/license-ISC-blue?style=flat)
 
-This project is being built with a **clean architecture-first approach**, focusing on maintainability, predictable error handling, and scalable routing.
+> The backend REST API powering **[Direct Rent](https://www.directrent.ca)** — a rental-listings marketplace that connects property owners directly with renters, with an admin-moderated approval workflow for both owner accounts and property listings.
 
----
+## Table of Contents
 
-## 🚀 Tech Stack
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+  - [Running the Server](#running-the-server)
+- [API Reference](#api-reference)
+  - [Response Format](#response-format)
+  - [Health](#health)
+  - [Auth](#auth)
+  - [Users](#users)
+  - [Properties](#properties)
+  - [Uploads](#uploads)
+  - [Leads](#leads)
+- [Authentication and Authorization](#authentication-and-authorization)
+- [Data Models](#data-models)
+- [Property Lifecycle](#property-lifecycle)
+- [Testing](#testing)
+- [Available Scripts](#available-scripts)
+- [Security Notes](#security-notes)
+- [Possible Next Steps](#possible-next-steps)
+- [License](#license)
 
-- Node.js
-- Express
-- TypeScript
-- tsx (development runner)
-- dotenv (environment variables)
-- cors
+## Overview
 
----
+Direct Rent API is a Node.js + Express + TypeScript backend serving three kinds of participants:
 
-## 📁 Project Structure
+- **Renters** — public, unauthenticated visitors who browse approved listings and submit inquiries ("leads").
+- **Owners** — authenticated landlords who list and manage their own properties. New owner accounts must verify their email and be approved by an admin before they can publish anything.
+- **Admins** — moderate incoming owner accounts and property listings, and can manage any property on the platform.
 
+Identity and data live in **Firebase** (Authentication + Firestore), images are stored in **Cloudinary** via signed, direct-to-cloud uploads, transactional email is sent through **Resend**, and public-facing forms are protected by **Cloudflare Turnstile**.
+
+## Features
+
+- 🔐 Firebase-authenticated requests with role-based access control (`owner` / `admin`)
+- 🧭 Admin-moderated onboarding — owner accounts start unapproved and unverified
+- 🏠 Full property lifecycle — create, edit, approve/reject, archive, and relist
+- 📬 Lead capture on live listings, with an admin-only inbox
+- ☁️ Signed, direct-to-Cloudinary uploads — the Cloudinary API secret never reaches the client
+- ✉️ Branded verification emails via Resend, built on Firebase's verification-link generation
+- 🤖 Cloudflare Turnstile bot protection on the public signup and lead-submission forms
+- ✅ Centralized error handling, Zod request validation, and dev-mode request logging
+- 🧪 Jest + Supertest test setup
+
+## Tech Stack
+
+| Layer | Choice |
+| --- | --- |
+| Runtime | Node.js, TypeScript 6 |
+| Web framework | Express 5 |
+| Auth & database | Firebase Admin SDK (Authentication + Firestore) |
+| File storage | Cloudinary (signed uploads) |
+| Email | Resend |
+| Bot protection | Cloudflare Turnstile |
+| Validation | Zod |
+| Dev server | tsx (watch mode) |
+| Testing | Jest, ts-jest, Supertest |
+
+## Project Structure
+
+```
 src/
-  app.ts
-  server.ts
-  config/
-    env.ts
-  middlewares/
-    requestLogger.ts
-    notFound.ts
-    errorHandler.ts
-  routes/
-    health.routes.ts
-  utils/
-    AppError.ts
-    asyncHandler.ts
+├── app.ts                     # Express app: CORS, middleware, route mounting
+├── server.ts                  # Entry point — starts the HTTP server
+├── config/
+│   ├── env.ts                  # Typed, validated environment variable loader
+│   ├── firebaseAdmin.ts        # Firebase Admin SDK + Firestore initialization
+│   └── cloudinary.ts           # Cloudinary SDK configuration
+├── controllers/               # Thin request handlers — delegate to services
+│   ├── auth.controller.ts
+│   ├── lead.controller.ts
+│   ├── property.controller.ts
+│   ├── upload.controller.ts
+│   └── user.controller.ts
+├── services/                  # Business logic — Firestore, Cloudinary, Resend, Turnstile
+│   ├── auth.service.ts
+│   ├── email.service.ts
+│   ├── lead.service.ts
+│   ├── property.service.ts
+│   ├── turnstile.service.ts
+│   ├── upload.service.ts
+│   └── user.service.ts
+├── routes/                    # Route definitions, grouped by resource
+│   ├── auth.routes.ts
+│   ├── health.routes.ts
+│   ├── lead.routes.ts
+│   ├── property.routes.ts
+│   ├── upload.routes.ts
+│   └── user.routes.ts
+├── middlewares/
+│   ├── requireAuth.ts           # Verifies the Firebase ID token; loads the user profile
+│   ├── requireEmailVerified.ts  # Gates routes behind a verified email (admins bypass)
+│   ├── validate.ts              # Zod request-body validation
+│   ├── errorHandler.ts          # Centralized error handler
+│   ├── notFound.ts              # 404 handler
+│   └── requestLogger.ts         # Dev-only request logging
+├── schemas/                   # Zod schemas (also the source of inferred request types)
+│   ├── auth.schema.ts
+│   ├── lead.schema.ts
+│   └── property.schema.ts
+├── types/                     # Shared TypeScript types
+├── utils/
+│   ├── appError.ts              # Custom error class carrying an HTTP status code
+│   └── asyncHandler.ts          # Wraps async route handlers to forward errors
+└── __tests__/                  # Jest + Supertest test suites
+```
 
-## ⚙️ Core Concepts Implemented
+## Getting Started
 
-### 1. Environment Configuration
+### Prerequisites
 
-Centralized in:
+- **Node.js 20 LTS or newer** — no version is pinned via `engines` in `package.json`.
+- A **Firebase** project with **Authentication** (Email/Password sign-in) and **Firestore** enabled, plus a generated service-account key (Project Settings → Service Accounts → Generate new private key).
+- A **Cloudinary** account (cloud name + API key/secret).
+- A **Resend** account with an API key and a verified "from" address.
+- A **Cloudflare Turnstile** site and secret key.
 
-src/config/env.ts
+### Installation
 
-Provides:
-
-- `env.PORT`
-- `env.NODE_ENV`
-- `isDev`, `isProd`, `isTest`
-
-👉 Avoids direct use of `process.env` across the codebase.
-
----
-
-### 2. Middleware Pipeline
-
-Every request follows this flow:
-
-Request  
-→ cors  
-→ express.json  
-→ requestLogger  
-→ route handler  
-→ notFound (if no route matched)  
-→ errorHandler (if error occurs)
-
----
-
-### 3. Request Logger
-
-Logs in development:
-
-- HTTP method
-- URL
-- status code
-- response time
-
-Purpose:
-
-- debugging
-- visibility into API behavior
-
----
-
-### 4. Not Found Handler (404)
-
-Handles unmatched routes:
-
-GET /api/unknown → 404
-
-Returns a consistent error response.
-
----
-
-### 5. Global Error Handler
-
-Centralized error handling for the entire app.
-
-Behavior:
-
-- uses custom `statusCode` if provided
-- defaults to `500`
-- shows stack trace in development
-- hides sensitive details in production
-
----
-
-### 6. AppError (Custom Errors)
-
-Used to throw structured, intentional errors:
-
-Unauthorized → 401  
-Not Found → 404  
-Bad Request → 400
-
-Purpose:
-
-- distinguish expected errors from system failures
-- keep error responses consistent
-
----
-
-### 7. asyncHandler (Async Error Wrapper)
-
-Wraps async routes to automatically forward errors to the global error handler.
-
-Without it:
-
-- async errors may crash the app
-- requires repetitive try/catch
-
-With it:
-
-- cleaner routes
-- consistent error flow
-
----
-
-## 🌐 Available Routes
-
-### Root
-
-GET /
-
-Response:
-
-{  
-  "success": true,  
-  "message": "Rental Platform API running"  
-}
-
----
-
-### Health Check
-
-GET /api/health
-
-Response:
-
-{  
-  "success": true,  
-  "message": "API is healthy",  
-  "timestamp": "..."  
-}
-
----
-
-### Error Test
-
-GET /api/health/error-test
-
-Tests global error handling.
-
----
-
-### Async Error Test
-
-GET /api/health/async-error-test
-
-Tests async error handling via `asyncHandler`.
-
----
-
-## 🛠 Installation
-
+```bash
+git clone <your-repo-url> directrentca-api
+cd directrentca-api
 npm install
+```
 
----
+### Environment Variables
 
-## ▶️ Scripts
+Create a `.env` file in the project root:
 
-npm run dev  
-npm run build  
-npm run start
+| Variable | Description |
+| --- | --- |
+| `NODE_ENV` | `development`, `production`, or `test`. Defaults to `development`. |
+| `PORT` | Port the server listens on. Defaults to `5000`. |
+| `FIREBASE_PROJECT_ID` | Project ID of the Firebase service account. |
+| `FIREBASE_CLIENT_EMAIL` | Client email of the Firebase service account. |
+| `FIREBASE_PRIVATE_KEY` | Private key of the Firebase service account. Keep the `\n` sequences — the app un-escapes them into real newlines at startup. |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name. |
+| `CLOUDINARY_API_KEY` | Cloudinary API key. |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret, used server-side to sign upload requests. |
+| `RESEND_API_KEY` | API key for Resend (verification emails). |
+| `RESEND_FROM_EMAIL` | The "from" address used when sending verification emails. |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key, used to verify tokens from the public signup and lead forms. |
 
-### Development
+> A single `CLOUDINARY_URL` connection string is also accepted by the Cloudinary SDK as a shorthand for the three `CLOUDINARY_*` variables above, though this codebase currently sets them explicitly in `src/config/cloudinary.ts`.
 
-npm run dev
+Never commit your real `.env` or Firebase service-account file — both are already listed in `.gitignore`.
 
-Runs server with live reload using `tsx`.
+### Running the Server
 
----
+```bash
+npm run dev     # start with hot-reload (tsx watch)
+npm run build   # compile TypeScript to dist/
+npm start       # run the compiled server (run build first)
+```
 
-### Build
+By default the API listens on `http://localhost:5000`. CORS currently allows requests from `http://localhost:3000`, `https://simple-lease.vercel.app`, and `https://www.directrent.ca` — add any new frontend origin to the `allowedOrigins` array in `src/app.ts`.
 
-npm run build
+## API Reference
 
-Compiles TypeScript → `dist/`
+All routes are mounted under `/api`. Every response is JSON.
 
----
+### Response Format
 
-### Production
+Success:
 
-npm run start
+```json
+{
+  "success": true,
+  "message": "Human-readable summary",
+  "data": {}
+}
+```
 
-Runs compiled server.
+Error:
 
----
+```json
+{
+  "success": false,
+  "error": "Human-readable error message",
+  "stack": "Only included when NODE_ENV=development"
+}
+```
 
-## 🔐 Environment Variables
+### Health
 
-Create `.env`:
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/api/health` | Public | Liveness check |
 
-PORT=5000  
-NODE_ENV=development
+### Auth
 
----
+**Base path:** `/api/auth`
 
-## 🧠 Design Principles
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/signup` | Public | Register a new owner account and send a verification email |
+| POST | `/resend-verification-email` | Authenticated | Resend the verification email (5-minute cooldown) |
 
-This project is built with:
+<details>
+<summary>Example — <code>POST /api/auth/signup</code></summary>
 
-### 1. Separation of Concerns
+```bash
+curl -X POST http://localhost:5000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Landlord",
+    "email": "jane@example.com",
+    "password": "a-strong-password-here",
+    "turnstileToken": "<token from the Turnstile widget>"
+  }'
+```
 
-- middleware handles cross-cutting concerns
-- routes handle HTTP logic
-- utilities handle reusable logic
+```json
+{
+  "success": true,
+  "message": "Account created successfully",
+  "data": {
+    "id": "firebase-uid",
+    "email": "jane@example.com",
+    "role": "owner",
+    "isApproved": false
+  }
+}
+```
 
----
+</details>
 
-### 2. Predictable Error Handling
+### Users
 
-- all errors go through a single handler
-- consistent API responses
-- no leaked stack traces in production
+**Base path:** `/api/users`
 
----
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/me` | Authenticated | Get the current user's profile |
+| GET | `/pending-owners` | Admin | List owner accounts awaiting approval |
+| PATCH | `/:id/approve` | Admin | Approve a pending owner account |
 
-### 3. Clean Async Flow
+### Properties
 
-- async errors are always captured
-- no repetitive try/catch blocks
+**Base path:** `/api/properties`
 
----
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/` | Public | List approved, non-archived properties |
+| GET | `/:id` | Public | Get a single approved, non-archived property |
+| GET | `/mine` | Owner | List the current owner's own properties |
+| GET | `/mine/:id` | Owner | Get one of the current owner's own properties |
+| POST | `/` | Owner or Admin (verified + approved) | Create a property — starts as `pending` |
+| PATCH | `/:id` | Owner (verified + approved) | Update your own property — resets it to `pending` |
+| PATCH | `/:id/archive` | Owner or Admin (verified) | Archive a property |
+| PATCH | `/:id/relist` | Owner or Admin (verified) | Relist an archived property — resets it to `pending` |
+| GET | `/pending` | Admin | List properties awaiting moderation |
+| GET | `/archived` | Admin | List archived properties |
+| GET | `/admin` | Admin | List all properties, with an optional `?status=` filter |
+| GET | `/admin/:id` | Admin | Get any property, regardless of status |
+| PATCH | `/:id/status` | Admin | Approve or reject a pending property (rejection requires a comment) |
 
-### 4. Scalable Structure
+### Uploads
 
-- easy to add routes (auth, properties, leads)
-- clear folder boundaries
-- ready for controller/service layers
+**Base path:** `/api/uploads`
 
----
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/sign` | Owner or Admin (verified + approved) | Get a signed Cloudinary signature scoped to `properties/{uid}` |
 
-## 🔮 Next Steps
+### Leads
 
-Planned features:
+**Base path:** `/api/leads`
 
-### Phase 1 — Core API
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/` | Public | Submit an inquiry on an approved property |
+| GET | `/` | Admin | List all submitted leads |
 
-- auth routes (`/api/auth`)
-- Firebase user sync
-- role-based access control
+## Authentication and Authorization
 
-### Phase 2 — Business Logic
+This API doesn't issue its own session tokens — clients sign in directly against **Firebase Authentication** (email/password) using a Firebase client SDK, then send the resulting **ID token** on every request that needs it:
 
-- property CRUD (landlords)
-- lead submission (tenants)
-- dashboard APIs
+```
+Authorization: Bearer <firebase-id-token>
+```
 
-### Phase 3 — Platform Features
+`requireAuth` (in `src/middlewares/requireAuth.ts`) verifies that token with the Admin SDK, loads the matching `users/{uid}` Firestore document, and attaches the result to `req.user` (`uid`, `role`, `isApproved`, `emailVerified`, `name`, `email`). A few composable middlewares build on top of it:
 
-- image uploads (Cloudinary)
-- admin tools
-- analytics
+- **`requireRole(...roles)`** — restricts a route to one or more roles (`"owner"`, `"admin"`).
+- **`requireApproved`** — blocks owners whose account hasn't been approved yet by an admin.
+- **`requireEmailVerified`** — blocks unverified accounts (admins are exempt).
 
----
+Email-verification status is synced from Firebase Auth into the Firestore profile automatically the next time a verified user makes an authenticated request.
 
-## 🧩 Long-Term Goal
+## Data Models
 
-To build a production-ready backend supporting:
+### Property (`properties/{id}` in Firestore)
 
-- multi-role users (landlord, tenant, admin)
-- property listings
-- lead generation system
-- admin dashboard
-- scalable API architecture
+```typescript
+interface Property {
+  id: string;
+  ownerId: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  images: { url: string; publicId: string }[];
+  propertyType:
+    | "apartment" | "house" | "basement" | "condo"
+    | "room" | "commercial" | "other" | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  squareFeet: number | null;
+  availableFrom: string | null;
+  leaseTerm: "monthly" | "yearly" | "short_term" | "flexible" | null;
+  parkingAvailable: boolean | null;
+  utilitiesIncluded: boolean | null;
+  laundryAvailable: boolean | null;
+  furnished: boolean | null;
+  petFriendly: boolean | null;
+  customFacts: { label: string; value: string }[]; // up to 6, unique labels
+  status: "pending" | "approved" | "rejected";
+  isFeatured: boolean;
+  isArchived: boolean;
+  archivedAt: string | null;
+  archivedBy: string | null;
+  rejectionComment: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+  createdAt: string;
+}
+```
 
----
+### User (`users/{uid}` in Firestore)
 
-## 📌 Notes
+```typescript
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "admin";
+  isApproved: boolean;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
+  verificationEmailSentAt: string;
+  createdAt: string;
+}
+```
 
-This project is intentionally built step-by-step:
+### Lead (`leads/{id}` in Firestore)
 
-1. server setup
-2. middleware system
-3. error handling
-4. async handling
-5. feature modules
+```typescript
+interface Lead {
+  id: string;
+  propertyId: string;
+  ownerId: string;
+  property: { title: string; location: string; price: number }; // snapshot at submission time
+  name: string;
+  email: string;
+  message: string;
+  createdAt: string;
+}
+```
 
-Focus is on **strong fundamentals before complexity**.
+## Property Lifecycle
 
----
+```
+pending → approved (public) → archived → relisted → pending (re-review)
+        → rejected (owner edits → back to pending)
+```
 
-## 💡 Summary
+1. An owner creates a property → it starts as `pending`.
+2. An admin reviews it: **approve** → `approved` and publicly visible, or **reject** → `rejected` with a required `rejectionComment`.
+3. Any edit an owner makes to their property resets its `status` to `pending` for re-review.
+4. An owner or admin can **archive** a property at any time, removing it from public and owner listings.
+5. An owner or admin can **relist** an archived property, which resets `isArchived` to `false` and sends it back through moderation as `pending`.
 
-This is not just an Express app — it is a **structured backend foundation** designed to scale into a full rental platform.
+## Testing
+
+```bash
+npm test          # run the Jest suite once
+npm run test:watch
+```
+
+Test suites (Jest + `ts-jest` + Supertest) currently exist for the health-check endpoint, Cloudinary upload-signature generation, and account creation/sync. Some of these predate recent route changes and are worth revisiting alongside new coverage as features are added.
+
+## Available Scripts
+
+| Script | Command | Description |
+| --- | --- | --- |
+| `dev` | `npm run dev` | Run the API with hot-reload via `tsx watch` |
+| `build` | `npm run build` | Compile TypeScript to `dist/` |
+| `start` | `npm start` | Run the compiled server (`dist/server.js`) |
+| `test` | `npm test` | Run the Jest test suite |
+| `test:watch` | `npm run test:watch` | Run Jest in watch mode |
+
+## Security Notes
+
+- Every protected route verifies a real Firebase ID token server-side — there's no custom session/JWT logic to maintain.
+- Role, approval, and email-verification checks are composable middleware, applied per-route in `src/routes/`.
+- Cloudinary uploads are signed on the server; the API secret never reaches the client.
+- Public-facing forms (signup, leads) are gated by Cloudflare Turnstile.
+- CORS is restricted to an explicit origin allowlist in `src/app.ts`.
+- Secrets are loaded from environment variables. Keep `.env` and your Firebase service-account file out of version control and out of anywhere else this codebase gets shared (both are already `.gitignore`d).
+
+## Possible Next Steps
+
+- Search/filtering (location, price range, bedrooms, property type) and pagination on the public listings endpoint
+- An endpoint to toggle `isFeatured` — the field exists on the `Property` model but nothing currently sets it
+- Rate limiting on public endpoints (`/signup`, `/leads`)
+- CI (e.g., GitHub Actions) to run `npm test` on every push/PR
+- Expanding test coverage to match the current route set
+
+## License
+
+ISC
